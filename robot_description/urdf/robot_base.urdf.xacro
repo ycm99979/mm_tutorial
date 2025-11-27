@@ -1,0 +1,218 @@
+<?xml version="1.0"?>
+<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  
+  <!-- Include wheel definitions -->
+  <xacro:include filename="$(find robot_description)/urdf/front_left_wheel.xacro"/>
+  <xacro:include filename="$(find robot_description)/urdf/front_right_wheel.xacro"/>
+  <xacro:include filename="$(find robot_description)/urdf/rear_left_wheel.xacro"/>
+  <xacro:include filename="$(find robot_description)/urdf/rear_right_wheel.xacro"/>
+    
+  <link name="base_link"/>
+  <joint name="base_link_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="chassis_link"/>
+  </joint>
+  
+  <link name="chassis_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/robot_chassis.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.085" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.60 0.46 0.235"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <!-- Center of mass -->
+      <origin rpy="0 0 0" xyz="0.012  0.002 0.067"/>
+      <mass value="16.523"/>
+      <!-- Moments of inertia: ( chassis without wheels ) -->
+      <inertia ixx="0.3136" ixy="-0.0008" ixz="0.0164" iyy="0.3922" iyz="-0.0009" izz="0.4485"/>
+    </inertial>
+  </link>
+
+<!--
+  <link name="front_fender_link">
+    <visual>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/jackal-fender.stl"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+  </link>
+  <joint name="front_fender_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="chassis_link"/>
+    <child link="front_fender_link"/>
+  </joint>
+
+
+  <link name="rear_fender_link">
+    <visual>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/jackal-fender.stl"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+  </link>
+  <joint name="rear_fender_joint" type="fixed">
+    <origin rpy="0 0 3.14159265359" xyz="0 0 0"/>
+    <parent link="chassis_link"/>
+    <child link="rear_fender_link"/>
+  </joint>
+-->
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="chassis_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0.300 0 0.215" rpy="0 0 0"/>
+  </joint>
+
+  <link name="imu_link">
+    </link>
+
+  <gazebo reference="imu_link">
+    <sensor name="imu_sensor" type="imu">
+      <alwaysOn>true</alwaysOn>
+      <update_rate>100</update_rate>
+      <imu>
+        <topic>/imu/data</topic>
+        <frame_id>imu_link</frame_id>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="chassis_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.300 0 0.215" rpy="0 0 0"/>
+  </joint>
+  
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/D455.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/D455.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <gazebo reference="camera_sensor_link">
+    <sensor name="camera_front" type="camera">
+      <alwaysOn>true</alwaysOn>
+      <visualize>true</visualize>
+      <update_rate>30</update_rate>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.01</near>
+          <far>50</far>
+        </clip>
+      </camera>
+      <topic>/camera/image_raw</topic>
+      <frame_id>camera_link</frame_id>
+      <ignition_frame_id>camera_link</ignition_frame_id>
+    </sensor>
+  </gazebo>
+ 
+  <joint name="camera_sensor_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_sensor_link"/>
+    <origin xyz="0.03 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name = "camera_sensor_link">
+  </link>
+
+  <joint name="lidar_mount_joint" type="fixed">
+    <parent link="chassis_link"/>
+    <child link="lidar_mount"/>
+    <origin xyz="-0.150 0 0.235" rpy="0 0 0"/>
+  </joint>
+
+  <link name="lidar_mount">
+    <visual>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/lidar_mount.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/lidar_mount.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="VLP16">
+    <visual>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/VLP16.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="file://$(find robot_description)/meshes/VLP16.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.83"/> <origin xyz="0 0 0.03585"/>
+      <inertia ixx="0.0009" ixy="0" ixz="0" iyy="0.0009" iyz="0" izz="0.0011"/>
+    </inertial>
+  </link>
+
+  <joint name="lidar_to_lidar_mount" type="fixed">
+    <parent link="lidar_mount"/>
+    <child link="VLP16"/>
+    <origin xyz="0 0 0.160" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="VLP16">
+    <sensor name="lidar_head" type="gpu_lidar">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <topic>scan</topic>
+      <frame_id>VLP16</frame_id>
+      <ignition_frame_id>VLP16</ignition_frame_id>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159265</min_angle>
+            <max_angle>3.14159265</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.3</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+    </sensor>
+  </gazebo>
+
+</robot>
