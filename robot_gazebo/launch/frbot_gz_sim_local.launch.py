@@ -14,17 +14,17 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     pkg_share = get_package_share_directory("robot_description")
-    robot_config_pkg_share = get_package_share_directory("robot_config")
+    robot_bringup_pkg_share = get_package_share_directory("robot_bringup")
     gazebo_pkg_share = get_package_share_directory("robot_gazebo")
 
     # 1. 파일 경로 설정
     urdf_file = "mobile_manipulator.xacro"
     urdf_path = os.path.join(pkg_share, "urdf", urdf_file)
-    controllers_file = os.path.join(robot_config_pkg_share, "config", "frbot_controllers_sim.yaml")
+    controllers_file = os.path.join(robot_bringup_pkg_share, "config", "frbot_controllers_sim.yaml")
     world_file = os.path.join(gazebo_pkg_share, "worlds", "empty_worlds.sdf")
-    bridge_config_path = os.path.join(robot_config_pkg_share, 'config', 'gz_ros_bridge.yaml')
+    bridge_config_path = os.path.join(robot_bringup_pkg_share, 'config', 'gz_ros_bridge.yaml')
     rviz_config_file = os.path.join(gazebo_pkg_share, "rviz", "frbot_sim.rviz")
-    ekf_config_path = os.path.join(robot_config_pkg_share, 'config', 'ekf.yaml')
+    ekf_config_path = os.path.join(robot_bringup_pkg_share, 'config', 'ekf.yaml')
 
     # Gazebo 리소스 경로 설정 (Gazebo Fortress)
     gazebo_resource_path = os.path.join(gazebo_pkg_share, 'worlds')

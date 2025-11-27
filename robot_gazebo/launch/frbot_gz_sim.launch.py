@@ -14,7 +14,7 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     pkg_share = get_package_share_directory("robot_description")
-    robot_config_pkg_share = get_package_share_directory("robot_config")
+    robot_bringup_pkg_share = get_package_share_directory("robot_bringup")
     gazebo_pkg_share = get_package_share_directory("robot_gazebo")
 
     gazebo_world_path = os.path.join(gazebo_pkg_share, 'worlds')
@@ -28,9 +28,9 @@ def generate_launch_description():
         value=gazebo_world_path + ':' + gazebo_models_path)
 
     urdf_path = os.path.join(pkg_share, "urdf", "mobile_manipulator.xacro")
-    controllers_file = os.path.join(robot_config_pkg_share, "config", "frbot_controllers_sim.yaml")
-    world_file = os.path.join(gazebo_pkg_share, "worlds", "husarion_world.sdf")
-    bridge_config_path = os.path.join(robot_config_pkg_share, 'config', 'gz_ros_bridge.yaml')
+    controllers_file = os.path.join(robot_bringup_pkg_share, "config", "frbot_controllers_sim.yaml")
+    world_file = os.path.join(gazebo_pkg_share, "worlds", "empty_worlds.sdf")
+    bridge_config_path = os.path.join(robot_bringup_pkg_share, 'config', 'gz_ros_bridge.yaml')
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     declare_use_sim_time = DeclareLaunchArgument(
