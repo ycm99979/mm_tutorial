@@ -31,28 +31,13 @@ diff_drive_controller:
     left_wheel_names: ["left_wheel_joint"]
     right_wheel_names: ["right_wheel_joint"]
     
-    # 바퀴 수 (듀얼 채널이므로 1개씩)
-    wheels_per_side: 1
-    
     # 로봇 파라미터
     wheel_separation: 0.16        # 바퀴 간격 (m)
     wheel_radius: 0.033           # 바퀴 반경 (m)
     
-    # 속도 제한
-    linear.x.max_velocity: 0.5    # m/s
-    linear.x.min_velocity: -0.5
-    angular.z.max_velocity: 2.0   # rad/s
-    angular.z.min_velocity: -2.0
-    
-    # 가속도 제한
-    linear.x.max_acceleration: 1.0
-    angular.z.max_acceleration: 2.0
-    
     # 오도메트리 설정
     odom_frame_id: odom
     base_frame_id: base_link
-    pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
-    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
     
     # TF 발행
     enable_odom_tf: true
@@ -66,15 +51,13 @@ diff_drive_controller:
     
     # 위치 피드백 사용
     position_feedback: true
-    velocity_feedback: true
+    
+    # Stamped velocity 사용 안함 (geometry_msgs/Twist 사용)
+    use_stamped_vel: false
 
 # ============================================================================
 # Joint State Broadcaster 설정
 # ============================================================================
 joint_state_broadcaster:
   ros__parameters:
-    # 발행할 조인트 (비워두면 모든 조인트 발행)
-    joints: []
-    
-    # 추가 인터페이스
-    extra_joints: []
+    use_local_topics: false

@@ -19,15 +19,28 @@ robot_nav2/
 
 ---
 
-## 🗺️ Navigation Stack 구성
+## 🔗 TF 프레임 구조
 
-### TF 프레임 구조
+### ⚠️ 중요: 프레임 통일
+
+모든 패키지에서 **`base_footprint`**를 로봇 베이스 프레임으로 사용합니다.
 
 ```
-map → odom → base_link → sensors
-      ↑
-   (EKF 제공)
+map
+ └── odom                      ← (SLAM/AMCL이 발행)
+      └── base_footprint       ← robot_localization (EKF) 또는 diff_drive_controller가 발행
+           └── base_link       ← robot_state_publisher가 발행
+                └── sensors, wheels...
 ```
+
+### 프레임 설정 요약
+
+| 컴포넌트 | 파라미터 | 값 |
+|----------|----------|-----|
+| **nav2_params.yaml** | `base_frame_id` | `base_footprint` |
+| **ekf.yaml** | `base_link_frame` | `base_footprint` |
+| **diff_drive_controller** | `base_frame_id` | `base_footprint` |
+| **URDF** | base frame | `base_footprint` → `base_link` |
 
 ### 토픽 연결
 
@@ -37,6 +50,7 @@ map → odom → base_link → sensors
 | Global Planner | `/map`, `/goal_pose` | `/plan` |
 | Local Planner | `/scan`, `/plan` | `/cmd_vel` |
 | BT Navigator | `/goal_pose` | 액션 조정 |
+| EKF | `/diff_drive_controller/odom`, `/imu` | `/odometry/filtered`, TF (odom→base_footprint) |
 
 ---
 
@@ -46,7 +60,7 @@ map → odom → base_link → sensors
 
 ```yaml
 amcl:
-  base_frame_id: "base_link"
+  base_frame_id: "base_footprint"   # ★ base_footprint 사용
   odom_frame_id: "odom"
   global_frame_id: "map"
   scan_topic: scan
@@ -57,26 +71,20 @@ amcl:
 
 ```yaml
 bt_navigator:
-  odom_topic: /odometry/filtered  # EKF 오도메트리 사용
-  robot_base_frame: base_link
+  odom_topic: /odometry/filtered    # EKF 오도메트리 사용
+  robot_base_frame: base_footprint  # ★ base_footprint 사용
 ```
 
-### Controller (로컬 플래너)
+### Costmap (공통)
 
 ```yaml
-controller_server:
-  controller_plugins: ["FollowPath"]
-  FollowPath:
-    plugin: "dwb_core::DWBLocalPlanner"
-```
+local_costmap:
+  robot_base_frame: base_footprint  # ★ base_footprint 사용
+  global_frame: odom
 
-### Planner (글로벌 플래너)
-
-```yaml
-planner_server:
-  planner_plugins: ["GridBased"]
-  GridBased:
-    plugin: "nav2_navfn_planner::NavfnPlanner"
+global_costmap:
+  robot_base_frame: base_footprint  # ★ base_footprint 사용
+  global_frame: map
 ```
 
 ---
@@ -117,7 +125,7 @@ footprint: "[[0.2, 0.15], [0.2, -0.15], [-0.2, -0.15], [-0.2, 0.15]]"
 
 ```yaml
 global_costmap:
-  robot_base_frame: base_link
+  robot_base_frame: base_footprint  # ★ 통일된 프레임
   global_frame: map
   resolution: 0.05
   plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
@@ -127,11 +135,35 @@ global_costmap:
 
 ```yaml
 local_costmap:
+  robot_base_frame: base_footprint  # ★ 통일된 프레임
   global_frame: odom
   rolling_window: true
   width: 3
   height: 3
   resolution: 0.05
+```
+
+---
+
+## 🔧 관련 설정 파일
+
+### EKF (robot_bringup/config/ekf.yaml)
+
+```yaml
+ekf_filter_node:
+  base_link_frame: base_footprint  # ★ Nav2와 일치
+  odom_frame: odom
+  publish_tf: true                  # odom→base_footprint TF 발행
+```
+
+### diff_drive_controller (robot_hardware/config/md_4wd_controllers.yaml)
+
+```yaml
+diff_drive_controller:
+  base_frame_id: base_footprint    # ★ Nav2와 일치
+  odom_frame_id: odom
+  enable_odom_tf: true             # EKF 미사용 시
+  # enable_odom_tf: false          # EKF 사용 시 (robot_bringup)
 ```
 
 ---
@@ -168,6 +200,7 @@ ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
 ### "Transform timeout" 에러
 - TF가 정상 발행되는지 확인
 - `ros2 run tf2_tools view_frames` 로 TF 트리 확인
+- **base_footprint 프레임이 있는지 확인**
 
 ### 로봇이 장애물을 피하지 못함
 - inflation_radius 증가
@@ -176,3 +209,22 @@ ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
 ### 경로가 생성되지 않음
 - 맵이 정상 로드됐는지 확인
 - 목표 지점이 장애물 위가 아닌지 확인
+
+### "Extrapolation Error" 발생
+- use_sim_time 설정 확인 (시뮬/실제 환경 일치)
+- TF 발행 주기가 충분한지 확인
+
+---
+
+## 📊 프레임 체크리스트
+
+모든 설정 파일에서 프레임이 일치하는지 확인하세요:
+
+| 파일 | 설정 | 올바른 값 |
+|------|------|-----------|
+| `nav2_params.yaml` | `base_frame_id` | `base_footprint` ✅ |
+| `nav2_params.yaml` | `robot_base_frame` | `base_footprint` ✅ |
+| `ekf.yaml` | `base_link_frame` | `base_footprint` ✅ |
+| `md_4wd_controllers*.yaml` | `base_frame_id` | `base_footprint` ✅ |
+| `frbot_controllers*.yaml` | `base_frame_id` | `base_footprint` ✅ |
+| `cartographer.lua` | `tracking_frame` | `base_link` (내부) |

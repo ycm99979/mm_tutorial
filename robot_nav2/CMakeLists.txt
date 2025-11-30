@@ -14,12 +14,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 
-# Install launch files
-install(DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME}/
-)
-
-# Install config files
+# Install config and launch files
 install(DIRECTORY config launch
   DESTINATION share/${PROJECT_NAME}/
 )

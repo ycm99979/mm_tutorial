@@ -72,31 +72,42 @@ def generate_launch_description():
     controller_manager_node = Node(
         package='controller_manager',
         executable='ros2_control_node',
-        parameters=[{'robot_description': robot_description_content}, controller_config],
+        parameters=[
+            controller_config,
+            {'robot_description': robot_description_content},
+        ],
         output='screen',
     )
 
-    # Joint State Broadcaster Spawner (Controller Manager 시작 후 3초 대기)
+    # Joint State Broadcaster Spawner (Controller Manager 시작 후 5초 대기)
     joint_state_broadcaster_spawner = TimerAction(
-        period=3.0,
+        period=5.0,
         actions=[
             Node(
                 package='controller_manager',
                 executable='spawner',
-                arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'],
+                arguments=[
+                    'joint_state_broadcaster',
+                    '--controller-manager', '/controller_manager',
+                    '--unload-on-kill',
+                ],
                 output='screen',
             )
         ]
     )
 
-    # Diff Drive Controller Spawner (Controller Manager 시작 후 4초 대기)
+    # Diff Drive Controller Spawner (Controller Manager 시작 후 7초 대기)
+    # --inactive 없이 바로 활성화, 기존 컨트롤러가 있으면 unload 후 재로드
     diff_drive_controller_spawner = TimerAction(
-        period=4.0,
+        period=7.0,
         actions=[
             Node(
                 package='controller_manager',
                 executable='spawner',
-                arguments=['diff_drive_controller', '--controller-manager', '/controller_manager'],
+                arguments=[
+                    'diff_drive_controller',
+                    '--controller-manager', '/controller_manager',
+                ],
                 output='screen',
             )
         ]
@@ -113,6 +124,6 @@ def generate_launch_description():
         # Nodes
         robot_state_publisher_node,
         controller_manager_node,
-        joint_state_broadcaster_spawner,
+        # joint_state_broadcaster_spawner,  # diff_drive_controller가 joint_states를 자체 발행
         diff_drive_controller_spawner,
     ])

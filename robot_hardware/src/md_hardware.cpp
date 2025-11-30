@@ -476,6 +476,14 @@ hardware_interface::return_type MDMotorHardware::write(
     int16_t left_rpm = radPerSecToRpm(hw_commands_[0]);
     int16_t right_rpm = radPerSecToRpm(hw_commands_[1]);
 
+    // 디버그: 명령 값 출력 (0이 아닐 때만)
+    static int debug_count = 0;
+    if ((left_rpm != 0 || right_rpm != 0) && (debug_count++ % 50 == 0)) {
+        RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME),
+            "[WRITE] cmd: L=%.3f R=%.3f rad/s → RPM: L=%d R=%d",
+            hw_commands_[0], hw_commands_[1], left_rpm, right_rpm);
+    }
+
     // 듀얼 모터 속도 명령 전송
     putMdData(PID_PNT_VEL_CMD, motor_id_, left_rpm, right_rpm);
 
@@ -561,17 +569,15 @@ int MDMotorHardware::initSerial()
  * │ 1    │ TMID          │ 184 (PC)                                │
  * │ 2    │ ID            │ motor_id (1 또는 2)                     │
  * │ 3    │ PID           │ 207 (PID_PNT_VEL_CMD)                   │
- * │ 4    │ DataSize      │ 9                                       │
- * │ 5    │ left_rpm(L)   │ 왼쪽 RPM 하위 바이트                     │
- * │ 6    │ left_rpm(H)   │ 왼쪽 RPM 상위 바이트                     │
- * │ 7    │ right_rpm(L)  │ 오른쪽 RPM 하위 바이트                   │
- * │ 8    │ right_rpm(H)  │ 오른쪽 RPM 상위 바이트                   │
- * │ 9    │ brake_release │ 2 (데이터 요청 플래그)                   │
- * │ 10   │ left_dir      │ 0 (방향: 0=정방향, 1=역방향)             │
- * │ 11   │ right_dir     │ 0                                       │
- * │ 12   │ setting       │ 0                                       │
- * │ 13   │ timeout       │ 0                                       │
- * │ 14   │ Checksum      │ ~(합계) + 1                             │
+ * │ 4    │ DataSize      │ 7                                       │
+ * │ 5    │ D1_ENABLE     │ ID1 활성화 (1)                          │
+ * │ 6    │ D1_RPM(L)     │ ID1 RPM 하위 바이트                     │
+ * │ 7    │ D1_RPM(H)     │ ID1 RPM 상위 바이트                     │
+ * │ 8    │ D2_ENABLE     │ ID2 활성화 (1)                          │
+ * │ 9    │ D2_RPM(L)     │ ID2 RPM 하위 바이트                     │
+ * │ 10   │ D2_RPM(H)     │ ID2 RPM 상위 바이트                     │
+ * │ 11   │ REQUEST       │ 리턴 데이터 요청 (2)                    │
+ * │ 12   │ Checksum      │ ~(합계) + 1                             │
  * └────────────────────────────────────────────────────────────────┘
  */
 int MDMotorHardware::putMdData(uint8_t pid, uint8_t motor_id, 
@@ -596,29 +602,27 @@ int MDMotorHardware::putMdData(uint8_t pid, uint8_t motor_id,
 
     if (pid == PID_PNT_VEL_CMD)
     {
-        // 듀얼 모터 속도 명령
-        packet[4] = 9;  // DataSize
+        // 듀얼 모터 속도 명령 (md_ws와 동일한 형식)
+        packet[4] = 7;  // DataSize
 
         IByte left_bytes = short2Byte(left_rpm);
         IByte right_bytes = short2Byte(right_rpm);
 
-        packet[5] = left_bytes.low;    // left RPM (L)
-        packet[6] = left_bytes.high;   // left RPM (H)
-        packet[7] = right_bytes.low;   // right RPM (L)
-        packet[8] = right_bytes.high;  // right RPM (H)
-        packet[9] = REQUEST_PNT_MAIN_DATA;  // 데이터 요청 플래그
-        packet[10] = 0;                // left direction
-        packet[11] = 0;                // right direction
-        packet[12] = 0;                // setting
-        packet[13] = 0;                // timeout
+        packet[5] = 1;                 // D1 ENABLE (ID1 활성화)
+        packet[6] = left_bytes.low;    // D1 RPM (L)
+        packet[7] = left_bytes.high;   // D1 RPM (H)
+        packet[8] = 1;                 // D2 ENABLE (ID2 활성화)
+        packet[9] = right_bytes.low;   // D2 RPM (L)
+        packet[10] = right_bytes.high; // D2 RPM (H)
+        packet[11] = REQUEST_PNT_MAIN_DATA;  // 리턴 데이터 요청
 
-        for (int i = 4; i <= 13; ++i)
+        for (int i = 4; i <= 11; ++i)
         {
             checksum += packet[i];
         }
 
-        packet[14] = ~checksum + 1;    // Checksum (2의 보수)
-        packet_size = 15;
+        packet[12] = ~checksum + 1;    // Checksum (2의 보수)
+        packet_size = 13;
     }
     else if (pid == PID_TQ_OFF)
     {

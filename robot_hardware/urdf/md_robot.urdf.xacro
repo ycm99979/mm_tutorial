@@ -119,8 +119,8 @@
       <plugin>md_hardware/MDMotorHardware</plugin>
       
       <!-- 시리얼 통신 파라미터 -->
-      <param name="port">/dev/ttyMotor</param>
-      <param name="baudrate">57600</param>
+      <param name="port">/dev/ttyUSB0</param>
+      <param name="baudrate">19200</param>
       <param name="motor_id">1</param>
       <param name="id_mdui">184</param>
       <param name="id_mdt">183</param>
